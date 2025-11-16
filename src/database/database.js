@@ -1,11 +1,11 @@
 import * as SQLite from 'expo-sqlite';
 
 // Simple in-memory mock database for development
-
+let users = [];
 let tasks = [];
 let taskCollaborators = [];
 
-let nextUserId = 3;
+let nextUserId = 1;
 let nextTaskId = 1;
 let nextCollaboratorId = 1;
 
@@ -14,14 +14,19 @@ export const initDatabase = () => {
   return Promise.resolve();
 };
 
-export const addUser = (email, password) => {
+export const addUser = (name, email, password) => {
   return new Promise((resolve, reject) => {
     if (users.find(u => u.email === email)) {
       reject(new Error('User already exists'));
       return;
     }
     
-    const newUser = { id: nextUserId++, email, password };
+    const newUser = { 
+      id: nextUserId++, 
+      name, 
+      email, 
+      password 
+    };
     users.push(newUser);
     resolve(newUser.id);
   });
@@ -39,6 +44,7 @@ export const addTask = (title, description, ownerId) => {
     description,
     completed: false,
     ownerId,
+    ownerName: user?.name || 'Unknown',
     ownerEmail: user?.email || 'Unknown'
   };
   tasks.push(newTask);
@@ -111,11 +117,11 @@ export const getCollaboratorsForTask = (taskId) => {
     .filter(tc => tc.taskId === taskId)
     .map(tc => {
       const user = users.find(u => u.id === tc.userId);
-      return { id: user.id, email: user.email };
+      return { id: user.id, name: user.name, email: user.email };
     });
   return Promise.resolve(collaborators);
 };
 
 export const getAllUsers = () => {
-  return Promise.resolve(users.map(u => ({ id: u.id, email: u.email })));
+  return Promise.resolve(users.map(u => ({ id: u.id, name: u.name, email: u.email })));
 };

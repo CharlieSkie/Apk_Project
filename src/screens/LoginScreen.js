@@ -16,7 +16,11 @@ const LoginScreen = ({ navigation }) => {
       const user = await getUserByEmail(email);
       
       if (user && user.password === password) {
-        navigation.replace('TaskList', { userId: user.id, userEmail: user.email });
+        navigation.replace('TaskList', { 
+          userId: user.id, 
+          userName: user.name,
+          userEmail: user.email 
+        });
       } else {
         Alert.alert('Error', 'Invalid email or password');
       }

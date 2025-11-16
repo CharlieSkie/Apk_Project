@@ -75,6 +75,7 @@ const ShareTaskScreen = ({ navigation, route }) => {
 
   const renderCollaborator = ({ item }) => (
     <View style={styles.collaboratorItem}>
+      <Text style={styles.collaboratorName}>{item.name}</Text>
       <Text style={styles.collaboratorEmail}>{item.email}</Text>
     </View>
   );
@@ -84,6 +85,7 @@ const ShareTaskScreen = ({ navigation, route }) => {
       style={styles.userItem}
       onPress={() => setEmail(item.email)}
     >
+      <Text style={styles.userName}>{item.name}</Text>
       <Text style={styles.userEmail}>{item.email}</Text>
       <Text style={styles.shareHint}>Tap to select</Text>
     </TouchableOpacity>
@@ -92,6 +94,7 @@ const ShareTaskScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.taskTitle}>Share: {task.title}</Text>
+      <Text style={styles.taskOwner}>Created by: {task.ownerName}</Text>
       
       <View style={styles.shareSection}>
         <Text style={styles.sectionTitle}>Share with User</Text>
@@ -153,9 +156,15 @@ const styles = StyleSheet.create({
   taskTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 5,
     textAlign: 'center',
     color: '#333',
+  },
+  taskOwner: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#666',
   },
   shareSection: {
     marginBottom: 30,
@@ -200,9 +209,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
   },
-  collaboratorEmail: {
+  collaboratorName: {
     fontSize: 14,
+    fontWeight: 'bold',
     color: '#333',
+  },
+  collaboratorEmail: {
+    fontSize: 12,
+    color: '#666',
   },
   userItem: {
     padding: 12,
@@ -212,15 +226,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#007AFF',
   },
-  userEmail: {
+  userName: {
     fontSize: 14,
     color: '#007AFF',
     fontWeight: 'bold',
   },
-  shareHint: {
+  userEmail: {
     fontSize: 12,
+    color: '#007AFF',
+  },
+  shareHint: {
+    fontSize: 10,
     color: '#666',
     fontStyle: 'italic',
+    marginTop: 4,
   },
   noDataText: {
     textAlign: 'center',

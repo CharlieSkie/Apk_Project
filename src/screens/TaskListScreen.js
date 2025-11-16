@@ -12,7 +12,7 @@ import { getTasksForUser, toggleTaskCompletion, deleteTask } from '../database/d
 import TaskItem from '../components/TaskItem';
 
 const TaskListScreen = ({ navigation, route }) => {
-  const { userId, userEmail } = route.params;
+  const { userId, userName, userEmail } = route.params;
   const [tasks, setTasks] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -105,7 +105,10 @@ const TaskListScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>Welcome, {userEmail}</Text>
+        <View>
+          <Text style={styles.welcomeText}>Welcome, {userName}</Text>
+          <Text style={styles.emailText}>{userEmail}</Text>
+        </View>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
@@ -160,6 +163,11 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  emailText: {
+    color: 'white',
+    fontSize: 12,
+    opacity: 0.8,
   },
   logoutButton: {
     padding: 8,

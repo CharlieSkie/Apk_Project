@@ -21,7 +21,7 @@ const TaskItem = ({ task, onToggle, onEdit, onDelete, onShare }) => {
             </Text>
           ) : null}
           <Text style={styles.ownerText}>
-            Owner: {task.ownerEmail}
+            Created by: {task.ownerName} ({task.ownerEmail})
           </Text>
         </View>
       </View>

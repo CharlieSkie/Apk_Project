@@ -3,12 +3,13 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { addUser, getUserByEmail } from '../database/database';
 
 const RegisterScreen = ({ navigation }) => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -30,7 +31,7 @@ const RegisterScreen = ({ navigation }) => {
         return;
       }
 
-      const userId = await addUser(email, password);
+      const userId = await addUser(name, email, password);
       Alert.alert('Success', 'Account created successfully!', [
         { text: 'OK', onPress: () => navigation.navigate('Login') }
       ]);
@@ -43,6 +44,14 @@ const RegisterScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Register</Text>
+      
+      <TextInput
+        style={styles.input}
+        placeholder="Full Name"
+        value={name}
+        onChangeText={setName}
+        autoCapitalize="words"
+      />
       
       <TextInput
         style={styles.input}
