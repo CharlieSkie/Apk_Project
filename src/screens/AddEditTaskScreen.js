@@ -51,6 +51,7 @@ const AddEditTaskScreen = ({ navigation, route }) => {
         <TextInput
           style={styles.input}
           placeholder="Enter task title"
+          placeholderTextColor="#999"
           value={title}
           onChangeText={setTitle}
           maxLength={100}
@@ -60,6 +61,7 @@ const AddEditTaskScreen = ({ navigation, route }) => {
         <TextInput
           style={[styles.input, styles.textArea]}
           placeholder="Enter task description (optional)"
+          placeholderTextColor="#999"
           value={description}
           onChangeText={setDescription}
           multiline
@@ -109,6 +111,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 20,
     fontSize: 16,
+    color: '#333',
   },
   textArea: {
     height: 100,
