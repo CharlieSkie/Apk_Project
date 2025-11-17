@@ -17,7 +17,7 @@ function LoadingScreen() {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <ActivityIndicator size="large" color="#007AFF" />
-      <Text style={{ marginTop: 10 }}>Initializing Database...</Text>
+      <Text style={{ marginTop: 10 }}>Loading Todo App...</Text>
     </View>
   );
 }
@@ -30,7 +30,7 @@ export default function App() {
       try {
         await initDatabase();
         setDbInitialized(true);
-        console.log('Database initialized successfully');
+        console.log('Database initialized successfully with persistent storage');
       } catch (err) {
         console.error('Failed to initialize database:', err);
         setDbInitialized(true); // Continue to app anyway
