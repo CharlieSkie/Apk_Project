@@ -161,6 +161,7 @@ const LoginScreen = ({ navigation }) => {
                   <View style={styles.nameColumn}>
                     <Text style={styles.infoText}>• Boncales, Elaisa</Text>
                     <Text style={styles.infoText}>• Taculad, CieloMarie</Text>
+                    <Text style={styles.infoText}>• Murillo, Daniel</Text>
                     <Text style={styles.infoText}>• Ydulzura, Lyca Jane</Text>
                     <Text style={styles.infoText}>• Gwen Angel Obado</Text>
                   </View>
