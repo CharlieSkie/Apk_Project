@@ -56,7 +56,7 @@ export const initDatabase = async () => {
     console.log('✅ Collaborators table ready');
 
     console.log('🎉 Database initialized successfully');
-    return database;
+    return { success: true, message: 'Database initialized' };
   } catch (error) {
     console.error('❌ Database initialization error:', error);
     throw error;
@@ -72,7 +72,7 @@ export const addUser = async (name, email, password) => {
       [name, email, password]
     );
     console.log('✅ User added:', result.lastInsertRowId);
-    return result.lastInsertRowId;
+    return { id: result.lastInsertRowId, success: true };
   } catch (error) {
     console.log('❌ Add user error:', error);
     throw error;
@@ -86,7 +86,8 @@ export const getUserByEmail = async (email) => {
       'SELECT * FROM users WHERE email = ?;',
       [email]
     );
-    return result;
+    // ✅ FIXED: Always return an object, never undefined
+    return result || null;
   } catch (error) {
     console.log('❌ Get user error:', error);
     throw error;
@@ -102,7 +103,7 @@ export const addTask = async (title, description, ownerId) => {
       [title, description, ownerId]
     );
     console.log('✅ Task added:', result.lastInsertRowId);
-    return result.lastInsertRowId;
+    return { id: result.lastInsertRowId, success: true };
   } catch (error) {
     console.log('❌ Add task error:', error);
     throw error;
@@ -123,7 +124,8 @@ export const getTasksForUser = async (userId) => {
       [userId, userId]
     );
     console.log('✅ Tasks loaded:', result.length);
-    return result;
+    // ✅ FIXED: Always return an array, never undefined
+    return result || [];
   } catch (error) {
     console.log('❌ Get tasks error:', error);
     throw error;
@@ -137,7 +139,8 @@ export const updateTask = async (taskId, title, description, completed) => {
       'UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?;',
       [title, description, completed ? 1 : 0, taskId]
     );
-    return result;
+    // ✅ FIXED: Always return an object
+    return { changes: result.changes, success: true };
   } catch (error) {
     console.log('❌ Update task error:', error);
     throw error;
@@ -153,7 +156,8 @@ export const deleteTask = async (taskId) => {
     
     // Then delete the task
     const result = await db.runAsync('DELETE FROM tasks WHERE id = ?;', [taskId]);
-    return result;
+    // ✅ FIXED: Always return an object
+    return { changes: result.changes, success: true };
   } catch (error) {
     console.log('❌ Delete task error:', error);
     throw error;
@@ -167,7 +171,8 @@ export const toggleTaskCompletion = async (taskId, completed) => {
       'UPDATE tasks SET completed = ? WHERE id = ?;',
       [completed ? 1 : 0, taskId]
     );
-    return result;
+    // ✅ FIXED: Always return an object
+    return { changes: result.changes, success: true };
   } catch (error) {
     console.log('❌ Toggle task error:', error);
     throw error;
@@ -187,7 +192,8 @@ export const shareTaskWithUser = async (taskId, userEmail) => {
       'INSERT OR IGNORE INTO task_collaborators (taskId, userId) VALUES (?, ?);',
       [taskId, user.id]
     );
-    return result;
+    // ✅ FIXED: Always return an object
+    return { changes: result.changes, success: true };
   } catch (error) {
     console.log('❌ Share task error:', error);
     throw error;
@@ -204,7 +210,8 @@ export const getCollaboratorsForTask = async (taskId) => {
        WHERE tc.taskId = ?;`,
       [taskId]
     );
-    return result;
+    // ✅ FIXED: Always return an array, never undefined
+    return result || [];
   } catch (error) {
     console.log('❌ Get collaborators error:', error);
     throw error;
@@ -218,7 +225,8 @@ export const getAllUsers = async () => {
       'SELECT id, name, email FROM users;',
       []
     );
-    return result;
+    // ✅ FIXED: Always return an array, never undefined
+    return result || [];
   } catch (error) {
     console.log('❌ Get all users error:', error);
     throw error;
