@@ -1,244 +1,228 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SQLite from 'expo-sqlite';
 
-// Keys for AsyncStorage
-const USERS_KEY = 'todoapp_users';
-const TASKS_KEY = 'todoapp_tasks';
-const COLLABORATORS_KEY = 'todoapp_collaborators';
+// Safe database initialization
+let db = null;
 
-// Load data from AsyncStorage
-const loadData = async () => {
-  try {
-    const usersData = await AsyncStorage.getItem(USERS_KEY);
-    const tasksData = await AsyncStorage.getItem(TASKS_KEY);
-    const collaboratorsData = await AsyncStorage.getItem(COLLABORATORS_KEY);
-    
-    return {
-      users: usersData ? JSON.parse(usersData) : [],
-      tasks: tasksData ? JSON.parse(tasksData) : [],
-      collaborators: collaboratorsData ? JSON.parse(collaboratorsData) : [],
-    };
-  } catch (error) {
-    console.error('Error loading data:', error);
-    return { users: [], tasks: [], collaborators: [] };
+const initDb = () => {
+  if (!db) {
+    try {
+      // Use the new synchronous opening method
+      db = SQLite.openDatabaseSync('todoapp.db');
+      console.log('✅ Database opened successfully');
+    } catch (error) {
+      console.error('❌ Error opening database:', error);
+      throw error;
+    }
   }
-};
-
-// Save data to AsyncStorage
-const saveData = async (data) => {
-  try {
-    await AsyncStorage.setItem(USERS_KEY, JSON.stringify(data.users));
-    await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(data.tasks));
-    await AsyncStorage.setItem(COLLABORATORS_KEY, JSON.stringify(data.collaborators));
-  } catch (error) {
-    console.error('Error saving data:', error);
-  }
-};
-
-// Get next IDs
-const getNextIds = async () => {
-  const data = await loadData();
-  const nextUserId = data.users.length > 0 ? Math.max(...data.users.map(u => u.id)) + 1 : 1;
-  const nextTaskId = data.tasks.length > 0 ? Math.max(...data.tasks.map(t => t.id)) + 1 : 1;
-  const nextCollaboratorId = data.collaborators.length > 0 ? Math.max(...data.collaborators.map(tc => tc.id)) + 1 : 1;
-  
-  return { nextUserId, nextTaskId, nextCollaboratorId };
+  return db;
 };
 
 export const initDatabase = async () => {
   try {
-    // Just load data to initialize
-    await loadData();
-    console.log('Database initialized with persistent storage');
+    const database = initDb();
+    
+    // Create users table
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL
+      );
+    `);
+    console.log('✅ Users table ready');
+
+    // Create tasks table
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        completed INTEGER DEFAULT 0,
+        ownerId INTEGER NOT NULL
+      );
+    `);
+    console.log('✅ Tasks table ready');
+
+    // Create task_collaborators table
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS task_collaborators (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        taskId INTEGER NOT NULL,
+        userId INTEGER NOT NULL,
+        UNIQUE(taskId, userId)
+      );
+    `);
+    console.log('✅ Collaborators table ready');
+
+    console.log('🎉 Database initialized successfully');
+    return database;
   } catch (error) {
-    console.error('Error initializing database:', error);
+    console.error('❌ Database initialization error:', error);
+    throw error;
   }
 };
 
+// User operations
 export const addUser = async (name, email, password) => {
   try {
-    const data = await loadData();
-    const { nextUserId } = await getNextIds();
-    
-    // Check if user already exists
-    if (data.users.find(u => u.email === email)) {
-      throw new Error('User already exists');
-    }
-    
-    const newUser = { 
-      id: nextUserId, 
-      name, 
-      email, 
-      password 
-    };
-    
-    data.users.push(newUser);
-    await saveData(data);
-    return newUser.id;
+    const db = initDb();
+    const result = await db.runAsync(
+      'INSERT INTO users (name, email, password) VALUES (?, ?, ?);',
+      [name, email, password]
+    );
+    console.log('✅ User added:', result.lastInsertRowId);
+    return result.lastInsertRowId;
   } catch (error) {
-    console.error('Error adding user:', error);
+    console.log('❌ Add user error:', error);
     throw error;
   }
 };
 
 export const getUserByEmail = async (email) => {
   try {
-    const data = await loadData();
-    return data.users.find(u => u.email === email) || null;
+    const db = initDb();
+    const result = await db.getFirstAsync(
+      'SELECT * FROM users WHERE email = ?;',
+      [email]
+    );
+    return result;
   } catch (error) {
-    console.error('Error getting user:', error);
-    return null;
+    console.log('❌ Get user error:', error);
+    throw error;
   }
 };
 
+// Task operations
 export const addTask = async (title, description, ownerId) => {
   try {
-    const data = await loadData();
-    const { nextTaskId } = await getNextIds();
-    
-    const user = data.users.find(u => u.id === ownerId);
-    const newTask = {
-      id: nextTaskId,
-      title,
-      description,
-      completed: false,
-      ownerId,
-      ownerName: user?.name || 'Unknown',
-      ownerEmail: user?.email || 'Unknown'
-    };
-    
-    data.tasks.push(newTask);
-    await saveData(data);
-    return newTask.id;
+    const db = initDb();
+    const result = await db.runAsync(
+      'INSERT INTO tasks (title, description, ownerId) VALUES (?, ?, ?);',
+      [title, description, ownerId]
+    );
+    console.log('✅ Task added:', result.lastInsertRowId);
+    return result.lastInsertRowId;
   } catch (error) {
-    console.error('Error adding task:', error);
+    console.log('❌ Add task error:', error);
     throw error;
   }
 };
 
 export const getTasksForUser = async (userId) => {
   try {
-    const data = await loadData();
-    const userCollaborations = data.collaborators
-      .filter(tc => tc.userId === userId)
-      .map(tc => tc.taskId);
-    
-    return data.tasks.filter(task => 
-      task.ownerId === userId || userCollaborations.includes(task.id)
+    const db = initDb();
+    const result = await db.getAllAsync(
+      `SELECT t.*, u.name as ownerName, u.email as ownerEmail 
+       FROM tasks t 
+       LEFT JOIN users u ON t.ownerId = u.id 
+       WHERE t.ownerId = ? OR t.id IN (
+         SELECT taskId FROM task_collaborators WHERE userId = ?
+       )
+       ORDER BY t.completed ASC, t.id DESC;`,
+      [userId, userId]
     );
+    console.log('✅ Tasks loaded:', result.length);
+    return result;
   } catch (error) {
-    console.error('Error getting tasks:', error);
-    return [];
+    console.log('❌ Get tasks error:', error);
+    throw error;
   }
 };
 
 export const updateTask = async (taskId, title, description, completed) => {
   try {
-    const data = await loadData();
-    const taskIndex = data.tasks.findIndex(t => t.id === taskId);
-    
-    if (taskIndex !== -1) {
-      data.tasks[taskIndex] = {
-        ...data.tasks[taskIndex],
-        title,
-        description,
-        completed
-      };
-      await saveData(data);
-    }
+    const db = initDb();
+    const result = await db.runAsync(
+      'UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?;',
+      [title, description, completed ? 1 : 0, taskId]
+    );
+    return result;
   } catch (error) {
-    console.error('Error updating task:', error);
+    console.log('❌ Update task error:', error);
     throw error;
   }
 };
 
 export const deleteTask = async (taskId) => {
   try {
-    const data = await loadData();
-    data.tasks = data.tasks.filter(t => t.id !== taskId);
-    data.collaborators = data.collaborators.filter(tc => tc.taskId !== taskId);
-    await saveData(data);
+    const db = initDb();
+    
+    // First delete collaborators
+    await db.runAsync('DELETE FROM task_collaborators WHERE taskId = ?;', [taskId]);
+    
+    // Then delete the task
+    const result = await db.runAsync('DELETE FROM tasks WHERE id = ?;', [taskId]);
+    return result;
   } catch (error) {
-    console.error('Error deleting task:', error);
+    console.log('❌ Delete task error:', error);
     throw error;
   }
 };
 
 export const toggleTaskCompletion = async (taskId, completed) => {
   try {
-    const data = await loadData();
-    const taskIndex = data.tasks.findIndex(t => t.id === taskId);
-    
-    if (taskIndex !== -1) {
-      data.tasks[taskIndex].completed = completed;
-      await saveData(data);
-    }
+    const db = initDb();
+    const result = await db.runAsync(
+      'UPDATE tasks SET completed = ? WHERE id = ?;',
+      [completed ? 1 : 0, taskId]
+    );
+    return result;
   } catch (error) {
-    console.error('Error toggling task completion:', error);
+    console.log('❌ Toggle task error:', error);
     throw error;
   }
 };
 
+// Collaboration functions
 export const shareTaskWithUser = async (taskId, userEmail) => {
   try {
-    const data = await loadData();
-    const { nextCollaboratorId } = await getNextIds();
-    
-    const user = data.users.find(u => u.email === userEmail);
+    const user = await getUserByEmail(userEmail);
     if (!user) {
       throw new Error('User not found');
     }
 
-    const existingCollaboration = data.collaborators.find(
-      tc => tc.taskId === taskId && tc.userId === user.id
+    const db = initDb();
+    const result = await db.runAsync(
+      'INSERT OR IGNORE INTO task_collaborators (taskId, userId) VALUES (?, ?);',
+      [taskId, user.id]
     );
-
-    if (!existingCollaboration) {
-      const newCollaboration = {
-        id: nextCollaboratorId,
-        taskId,
-        userId: user.id
-      };
-      data.collaborators.push(newCollaboration);
-      await saveData(data);
-    }
+    return result;
   } catch (error) {
-    console.error('Error sharing task:', error);
+    console.log('❌ Share task error:', error);
     throw error;
   }
 };
 
 export const getCollaboratorsForTask = async (taskId) => {
   try {
-    const data = await loadData();
-    const collaborators = data.collaborators
-      .filter(tc => tc.taskId === taskId)
-      .map(tc => {
-        const user = data.users.find(u => u.id === tc.userId);
-        return { id: user.id, name: user.name, email: user.email };
-      });
-    return collaborators;
+    const db = initDb();
+    const result = await db.getAllAsync(
+      `SELECT u.id, u.name, u.email 
+       FROM users u 
+       INNER JOIN task_collaborators tc ON u.id = tc.userId 
+       WHERE tc.taskId = ?;`,
+      [taskId]
+    );
+    return result;
   } catch (error) {
-    console.error('Error getting collaborators:', error);
-    return [];
+    console.log('❌ Get collaborators error:', error);
+    throw error;
   }
 };
 
 export const getAllUsers = async () => {
   try {
-    const data = await loadData();
-    return data.users.map(u => ({ id: u.id, name: u.name, email: u.email }));
+    const db = initDb();
+    const result = await db.getAllAsync(
+      'SELECT id, name, email FROM users;',
+      []
+    );
+    return result;
   } catch (error) {
-    console.error('Error getting all users:', error);
-    return [];
+    console.log('❌ Get all users error:', error);
+    throw error;
   }
 };
 
-// Optional: Clear all data (for testing)
-export const clearAllData = async () => {
-  try {
-    await AsyncStorage.multiRemove([USERS_KEY, TASKS_KEY, COLLABORATORS_KEY]);
-    console.log('All data cleared');
-  } catch (error) {
-    console.error('Error clearing data:', error);
-  }
-};
+export default initDb;

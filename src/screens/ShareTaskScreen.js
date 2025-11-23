@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Alert, 
-  FlatList 
+  FlatList,
+  ScrollView 
 } from 'react-native';
 import { shareTaskWithUser, getCollaboratorsForTask, getAllUsers } from '../database/database';
 
@@ -91,11 +92,43 @@ const ShareTaskScreen = ({ navigation, route }) => {
     </TouchableOpacity>
   );
 
+  const renderCollaboratorsList = () => {
+    if (collaborators.length === 0) {
+      return <Text style={styles.noDataText}>No collaborators yet</Text>;
+    }
+    return (
+      <FlatList
+        data={collaborators}
+        renderItem={renderCollaborator}
+        keyExtractor={(item) => item.id.toString()}
+        scrollEnabled={false}
+      />
+    );
+  };
+
+  const renderUsersList = () => {
+    if (allUsers.length === 0) {
+      return <Text style={styles.noDataText}>No other users available</Text>;
+    }
+    return (
+      <FlatList
+        data={allUsers}
+        renderItem={renderUser}
+        keyExtractor={(item) => item.id.toString()}
+        scrollEnabled={false}
+      />
+    );
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.taskTitle}>Share: {task.title}</Text>
-      <Text style={styles.taskOwner}>Created by: {task.ownerName}</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      {/* Header Section */}
+      <View style={styles.header}>
+        <Text style={styles.taskTitle}>Share: {task.title}</Text>
+        <Text style={styles.taskOwner}>Created by: {task.ownerName}</Text>
+      </View>
       
+      {/* Share Input Section */}
       <View style={styles.shareSection}>
         <Text style={styles.sectionTitle}>Share with User</Text>
         <TextInput
@@ -119,40 +152,31 @@ const ShareTaskScreen = ({ navigation, route }) => {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.collaboratorsSection}>
+      {/* Collaborators Section */}
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Current Collaborators</Text>
-        {collaborators.length > 0 ? (
-          <FlatList
-            data={collaborators}
-            renderItem={renderCollaborator}
-            keyExtractor={(item) => item.id.toString()}
-          />
-        ) : (
-          <Text style={styles.noDataText}>No collaborators yet</Text>
-        )}
+        {renderCollaboratorsList()}
       </View>
 
-      <View style={styles.usersSection}>
+      {/* Available Users Section */}
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Available Users</Text>
-        {allUsers.length > 0 ? (
-          <FlatList
-            data={allUsers}
-            renderItem={renderUser}
-            keyExtractor={(item) => item.id.toString()}
-          />
-        ) : (
-          <Text style={styles.noDataText}>No other users available</Text>
-        )}
+        {renderUsersList()}
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#fff',
+  },
+  contentContainer: {
+    padding: 20,
+  },
+  header: {
+    marginBottom: 30,
   },
   taskTitle: {
     fontSize: 18,
@@ -164,17 +188,13 @@ const styles = StyleSheet.create({
   taskOwner: {
     fontSize: 14,
     textAlign: 'center',
-    marginBottom: 20,
     color: '#666',
   },
   shareSection: {
     marginBottom: 30,
   },
-  collaboratorsSection: {
-    marginBottom: 30,
-  },
-  usersSection: {
-    marginBottom: 20,
+  section: {
+    marginBottom: 25,
   },
   sectionTitle: {
     fontSize: 16,
